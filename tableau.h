@@ -9,7 +9,7 @@
 #define _TABLEAU___H_
 
 #include <assert.h>
-
+#include <iostream>
 template<class T>
 class Tableau {
 

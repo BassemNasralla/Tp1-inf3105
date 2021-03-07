@@ -7,18 +7,43 @@
 
 using namespace std;
 
-int calculerNombreChemins(Tableau<Cellule> &univers, const Cellule dep, const Cellule dest) {
-    int nombre = 0;
-    return nombre;
+Cellule lireCellule(istream &is){
+    int salle_x, i_x, y_x;
+    char a, b, c;
+    is >> salle_x >> a >> i_x >> b >> y_x >> c;
+    assert(a == '(' && b == ',' && c == ')');
+    Cellule temp = ::Cellule(salle_x, i_x, y_x);
+    return temp;
 }
 
-void nombreCheminsRec(Tableau<Cellule> &univers, Cellule &dep, Cellule &dist, int &compteur) {
-//todo
+void nombreCheminsRec(Tableau<Cellule> &univers,Tableau<Couple> &portails, Cellule &dep, Cellule &dest, int &compteur) {
+    if ( dep == dest ) {
+    compteur++;
+} else {
+    Tableau<Cellule> voisins = dep.retournerVoisins(univers,portails);
+    for (int i = 0; i < voisins.taille(); i++){
+        nombreCheminsRec(univers, portails, voisins[i],dest, compteur);
+        voisins[i].rendreDispo();
 }
+}
+}
+
+
+int calculerNombreChemins(Tableau<Cellule> &univers,  Tableau<Couple> &portails, Cellule &dep,  Cellule &dest, int &compteur) { 
+     if ( univers.chercher(dep) >= 0 && univers.chercher(dest) >= 0){
+         compteur = 0;
+         dep.rendreNonDispo();
+         nombreCheminsRec(univers, portails, dep, dest, compteur);
+         return compteur;
+}
+     return -1;
+}
+
 
 
 void creerTriangle(Tableau<Cellule> &univers, int numero, int dim) {
-    int dist = 0;
+printf("creation triangle %d avec succes\n", numero);    
+int dist = 0;
     for (int i = 0; i < dim / 2 + 1; i++) {
         for (int y = dist; y < dim - dist; y++) {
             printf("%d (%d,%d)\n", numero, i, y);
@@ -30,6 +55,7 @@ void creerTriangle(Tableau<Cellule> &univers, int numero, int dim) {
 }
 
 void creerDiamond(Tableau<Cellule> &univers, int numero, int dim) {
+printf("creation diamond %d avec succes\n", numero); 
     int dist = dim / 2;
     for (int i = 0; i < (dim / 2) + 1; i++) {
         for (int y = dist; y < dim - dist; y++) {
@@ -51,7 +77,8 @@ void creerDiamond(Tableau<Cellule> &univers, int numero, int dim) {
 }
 
 void creerCaree(Tableau<Cellule> &univers, int numero, int dim) {
-    for (int i = 0; i < dim; i++) {
+    printf("Carre %d cree avec succes\n", numero);
+	for (int i = 0; i < dim; i++) {
         for (int y = 0; y < dim; y++) {
             printf("%d (%d,%d)\n", numero, i, y);
             Cellule temp = ::Cellule(numero, i, y);
@@ -61,14 +88,15 @@ void creerCaree(Tableau<Cellule> &univers, int numero, int dim) {
 }
 
 void creerUnivers(Tableau<Cellule> &univers, Tableau<Couple> &portails, istream &is) {
+int compteur = 0;
     while (true) {
-        int compteur = 0;
         string type;
         is >> type;
         if (type == "-----")
             break; // fin de la lecture des types de salle
         int dim;
         is >> dim;
+
         if (type == "carre") {
             creerCaree(univers, compteur, dim);
         } else if (type == "diamant") {
@@ -76,27 +104,30 @@ void creerUnivers(Tableau<Cellule> &univers, Tableau<Couple> &portails, istream 
         } else if (type == "triangle") {
             creerTriangle(univers, compteur, dim);
         }
-        compteur++;
+compteur++;
     }
+
     while (!(is >> ws).eof()) {
         Cellule c1, c2;
         string fleche;
-        is >> c1;
+        c1 = lireCellule(is);
         is >> fleche;
         assert(fleche == "<-->");
-        is >> c2;
+        c2 = lireCellule(is);
         Couple temp = ::Couple(c1, c2);
         portails.ajouter(temp);
     }
 }
 
-int traiterRequetes(Tableau<Cellule> &univers, istream &is) {
+int traiterRequetes(Tableau<Cellule> &univers, Tableau<Couple> &portails, istream &is) {
     while (!(is >> ws).eof()) {
         Cellule dep, dest;
         string fleche;
-        is >> dep >> fleche >> dest;
-        assert(fleche == "-->");
-        cout << calculerNombreChemins(univers, dep, dest) << endl;
+        dep = lireCellule(is);
+        is >> fleche;
+        dest = lireCellule(is);
+        int compteur = 0;
+        cout << calculerNombreChemins(univers,portails, dep, dest, compteur) << endl;
     }
     return EXIT_SUCCESS;
 }
@@ -116,6 +147,8 @@ int main(int argc, char *argv[]) {
     Tableau<Cellule> univers;
     Tableau<Couple> portails;
     creerUnivers(univers, portails, funivers);
+    printf("FIN %d cellules\n", univers.taille() );
+    printf("Nombre des portails = %d\n", portails.taille());
 
     // Lecture des requêtes
     if (argc == 3) {
@@ -124,8 +157,8 @@ int main(int argc, char *argv[]) {
             cerr << "Erreur d'ouverture du fichier: " << argv[2] << endl;
             return EXIT_FAILURE;
         }
-        return traiterRequetes(univers, frequetes);
+        return traiterRequetes(univers, portails, frequetes);
     } else
-        return traiterRequetes(univers, cin);
+        return traiterRequetes(univers, portails, cin);
 }
 

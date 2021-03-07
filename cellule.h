@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include "tableau.h"
 
 class Cellule {
 public:
@@ -15,10 +16,21 @@ public:
     Cellule(int salle_x, int i_x, int y_x);
 
     ~Cellule();
+     
+    void rendreDispo();
+    
+    void rendreNonDispo();
+    
+    bool estVisite();
+
+    int afficher();
 
     bool operator==(const Cellule autre) const;
 
-    friend std::istream &operator>>(std::istream &, Cellule &);
+
+template<class T>
+friend class Tableau;
+
 
 private:
     int salle;
@@ -34,17 +46,31 @@ Cellule::Cellule(int salle_x, int i_x, int y_x) {
     visite = false;
 }
 
+Cellule::Cellule(){
+}
+
+Cellule::~Cellule(){
+}
+
 bool Cellule::operator==(Cellule autre) const {
     return autre.salle == salle && autre.i == i && autre.y == y;
 }
 
-std::istream &operator>>(std::istream &is, Cellule &) {
-    int salle_x, i_x, y_x;
-    char a, b, c;
-    is >> salle_x >> a >> i_x >> b >> y_x >> c;
-    assert(a == '(' && b == ',' && c == ')');
-    return is;
+bool Cellule::estVisite() {
+return visite;
+}
+
+void Cellule::rendreDispo() {
+visite = false;
+}
+
+void Cellule::rendreNonDispo() {
+visite = true;
 }
 
 
+int Cellule::afficher(){
+printf("\n\n %d (%d,%d) \n", salle, i, y);
+return i;
+}
 #endif //TP1_CELLULE_H

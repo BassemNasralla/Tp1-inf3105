@@ -28,5 +28,10 @@ Couple::Couple(Cellule &a, Cellule &b) {
     B = b;
 }
 
+Couple::Couple(){
+}
+
+Couple::~Couple(){
+}
 
 #endif //TP1_COUPLE_H
