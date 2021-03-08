@@ -2,7 +2,6 @@
 #include <fstream>
 #include <cassert>
 #include "tableau.h"
-#include "couple.h"
 #include "cellule.h"
 
 using namespace std;
@@ -16,21 +15,27 @@ Cellule lireCellule(istream &is){
     return temp;
 }
 
-void nombreCheminsRec(Tableau<Cellule> &univers,Tableau<Couple> &portails, Cellule &dep, Cellule &dest, int &compteur) {
+void nombreCheminsRec(Tableau<Cellule> &univers,Tableau<Cellule> &portails, Cellule &dep, Cellule &dest, int &compteur) {
     if ( dep == dest ) {
     compteur++;
 } else {
-    Tableau<Cellule> voisins = dep.retournerVoisins(univers,portails);
+    Tableau<int> voisins = dep.retournerVoisins(univers, portails);
     for (int i = 0; i < voisins.taille(); i++){
-        nombreCheminsRec(univers, portails, voisins[i],dest, compteur);
-        voisins[i].rendreDispo();
+      if (!univers[voisins[i]].estVisite() ){
+         univers[voisins[i]].rendreNonDispo();
+         nombreCheminsRec( univers, portails, univers[voisins[i]], dest, compteur);
+         univers[voisins[i]].rendreDispo();
+}
 }
 }
 }
 
 
-int calculerNombreChemins(Tableau<Cellule> &univers,  Tableau<Couple> &portails, Cellule &dep,  Cellule &dest, int &compteur) { 
+int calculerNombreChemins(Tableau<Cellule> &univers,  Tableau<Cellule> &portails, Cellule &dep,  Cellule &dest, int &compteur) { 
      if ( univers.chercher(dep) >= 0 && univers.chercher(dest) >= 0){
+if(dep == dest ){
+return 0;
+}
          compteur = 0;
          dep.rendreNonDispo();
          nombreCheminsRec(univers, portails, dep, dest, compteur);
@@ -42,11 +47,9 @@ int calculerNombreChemins(Tableau<Cellule> &univers,  Tableau<Couple> &portails,
 
 
 void creerTriangle(Tableau<Cellule> &univers, int numero, int dim) {
-printf("creation triangle %d avec succes\n", numero);    
 int dist = 0;
     for (int i = 0; i < dim / 2 + 1; i++) {
         for (int y = dist; y < dim - dist; y++) {
-            printf("%d (%d,%d)\n", numero, i, y);
             Cellule temp = ::Cellule(numero, i, y);
             univers.ajouter(temp);
         }
@@ -55,11 +58,9 @@ int dist = 0;
 }
 
 void creerDiamond(Tableau<Cellule> &univers, int numero, int dim) {
-printf("creation diamond %d avec succes\n", numero); 
     int dist = dim / 2;
     for (int i = 0; i < (dim / 2) + 1; i++) {
         for (int y = dist; y < dim - dist; y++) {
-            printf("%d (%d,%d)\n", numero, i, y);
             Cellule temp = ::Cellule(numero, i, y);
             univers.ajouter(temp);
         }
@@ -68,7 +69,6 @@ printf("creation diamond %d avec succes\n", numero);
     dist = 1;
     for (int i = dim / 2 + 1; i < dim; i++) {
         for (int y = dist; y < dim - dist; y++) {
-            printf("%d (%d,%d)\n", numero, i, y);
             Cellule temp = ::Cellule(numero, i, y);
             univers.ajouter(temp);
         }
@@ -77,17 +77,15 @@ printf("creation diamond %d avec succes\n", numero);
 }
 
 void creerCaree(Tableau<Cellule> &univers, int numero, int dim) {
-    printf("Carre %d cree avec succes\n", numero);
 	for (int i = 0; i < dim; i++) {
         for (int y = 0; y < dim; y++) {
-            printf("%d (%d,%d)\n", numero, i, y);
             Cellule temp = ::Cellule(numero, i, y);
             univers.ajouter(temp);
         }
     }
 }
 
-void creerUnivers(Tableau<Cellule> &univers, Tableau<Couple> &portails, istream &is) {
+void creerUnivers(Tableau<Cellule> &univers, Tableau<Cellule> &portails, istream &is) {
 int compteur = 0;
     while (true) {
         string type;
@@ -114,12 +112,12 @@ compteur++;
         is >> fleche;
         assert(fleche == "<-->");
         c2 = lireCellule(is);
-        Couple temp = ::Couple(c1, c2);
-        portails.ajouter(temp);
+        portails.ajouter(c1);
+        portails.ajouter(c2);
     }
 }
 
-int traiterRequetes(Tableau<Cellule> &univers, Tableau<Couple> &portails, istream &is) {
+int traiterRequetes(Tableau<Cellule> &univers, Tableau<Cellule> &portails, istream &is) {
     while (!(is >> ws).eof()) {
         Cellule dep, dest;
         string fleche;
@@ -145,10 +143,8 @@ int main(int argc, char *argv[]) {
     }
 
     Tableau<Cellule> univers;
-    Tableau<Couple> portails;
+    Tableau<Cellule> portails;
     creerUnivers(univers, portails, funivers);
-    printf("FIN %d cellules\n", univers.taille() );
-    printf("Nombre des portails = %d\n", portails.taille());
 
     // Lecture des requêtes
     if (argc == 3) {
